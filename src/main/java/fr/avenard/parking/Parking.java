@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
 
 import javax.validation.constraints.Positive;
 
@@ -50,11 +51,8 @@ public class Parking {
             throw new ParkingException("This parking already contains " + slotsType + " slots");
         }
 
-        this.parkingSlots.removeIf(parkingSlot -> slotsType.equals(parkingSlot.getSlotType())); // remove old slots
-
-        for (int i = 0; i < numberOfSlots; i++) {
-            this.parkingSlots.add(new ParkingSlot(slotsType)); // create the new parking slots
-        }
+        // create the new parking slots
+        IntStream.range(0, numberOfSlots).mapToObj(i -> new ParkingSlot(slotsType)).forEach(this.parkingSlots::add);
         return this;
     }
 
@@ -197,6 +195,14 @@ public class Parking {
         return this.parkingSlots.stream().filter(isFree(slotsType)).count();
     }
 
+    /**
+     * Predicate whether a parking slot is free and matches the provided car type.
+     *
+     * @param slotsType
+     *         a supported {@link CarType}
+     *
+     * @return a predicate to provide in a stream
+     */
     private static Predicate<ParkingSlot> isFree(@NonNull CarType slotsType) {
         return parkingSlot -> parkingSlot.isFree(slotsType);
     }
