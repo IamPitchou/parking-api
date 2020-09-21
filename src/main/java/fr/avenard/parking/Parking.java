@@ -33,6 +33,9 @@ public class Parking {
     }
 
     /**
+     * Define slots of a specific type in the parking lot. It creates all the new parking slots in the parking.
+     * You cannot override slots of a specific type. Planned for a future release.
+     *
      * @param slotsType
      *         a supported slot type
      * @param numberOfSlots
@@ -55,6 +58,26 @@ public class Parking {
         return this;
     }
 
+    /**
+     * Allow a car to enter the parking lot if a parking slot is free to receive this kind of car.
+     * It checks whether the car is already parked in the parking lot, so that it can reject it.
+     * If there is a slot available, the parking save the date time when the car entered the parking lot for future billing.
+     * It returns the parking slot where the car is parked. It's not mandatory to save this return object,
+     * you can use either the {@link #leave(Car)} or the {@link #leave(ParkingSlot)} )} to leave the parking slot.
+     * <p>
+     * This method uses {@link @Synchronized} to be safe with multi-threading.
+     * Only one car can enter the parking lot at the same time.
+     *
+     * @param car
+     *         car to store in the parking lot
+     *
+     * @return the parking slot where the car is parked
+     *
+     * @throws SlotNotFoundException
+     *         in case there is no slot available for the car
+     * @throws ParkingException
+     *         in case the car is already parked in the parking lot
+     */
     @Synchronized
     public ParkingSlot enter(@NonNull Car car) throws ParkingException {
         // check car is not already parked
@@ -73,6 +96,24 @@ public class Parking {
         return parkingSlot;
     }
 
+    /**
+     * Allow the user to leave the parking slot where he is parked using the car to find where it's parked.
+     * The car must be found in the parking lot, otherwise, it will be rejected.
+     * The returned car object store when the car left the parking slot. This information may be use to create the bill.
+     * <p>
+     * This method uses a sub-method {@link @Synchronized} to be safe with multi-threading.
+     * Only one car can leave the parking lot at the same time.
+     *
+     * @param car
+     *         car of the user
+     *
+     * @return the updated car
+     *
+     * @throws CarNotFoundException
+     *         if the car cannot be found in the parking lot
+     * @throws NoCarParkedException
+     *         if the parking slot where the car should be parked was updated by another thread at the same time.
+     */
     public Car leave(@NonNull Car car) throws CarNotFoundException, NoCarParkedException {
         // find where the car is parked
         final ParkingSlot parkingSlot = this.parkingSlots.stream()
@@ -84,6 +125,23 @@ public class Parking {
         return this.leave(parkingSlot);
     }
 
+    /**
+     * Allow the user to leave the parking slot using the slot where it's parked.
+     * It is recommended to use the {@link #leave(Car)} to avoid issue with parking slots.
+     * The slot must have a car parked, otherwise, it will be rejected.
+     * The returned car object store when the car left the parking slot. This information may be use to create the bill.
+     * <p>
+     * This method uses {@link @Synchronized} to be safe with multi-threading.
+     * Only one car can leave the parking lot at the same time.
+     *
+     * @param parkingSlot
+     *         slot where the car is parked
+     *
+     * @return the updated car
+     *
+     * @throws NoCarParkedException
+     *         if the car is not parked on the parking slot
+     */
     @Synchronized
     public Car leave(@NonNull ParkingSlot parkingSlot) throws NoCarParkedException {
         if (parkingSlot.isFree()) {
@@ -93,6 +151,18 @@ public class Parking {
         return parkingSlot.freeSlot();
     }
 
+    /**
+     * Determine how much the customer is charged using the parking pricing {@link #policy}.
+     * The car must leave the parking slot first and then request the bill.
+     *
+     * @param car
+     *         car with parking information
+     *
+     * @return the bill the user must pay
+     *
+     * @throws ParkingException
+     *         if the car did not leave its parking slot before calling this method.
+     */
     public BigDecimal bill(@NonNull Car car) throws ParkingException {
         // check the car is not parked anymore
         if (this.parkingSlots.stream().anyMatch(s -> Objects.equals(car, s.getCar()))) {
@@ -103,10 +173,26 @@ public class Parking {
         return this.policy.computeFare(car);
     }
 
+    /**
+     * Returns whether any parking slot matching the provided type is free.
+     *
+     * @param slotsType
+     *         a supported {@link CarType}
+     *
+     * @return true if has free slots of the provided type, false otherwise
+     */
     public boolean hasFreeSlot(@NonNull CarType slotsType) {
         return this.parkingSlots.stream().anyMatch(isFree(slotsType));
     }
 
+    /**
+     * Returns how many parking slots matching the provided type are free.
+     *
+     * @param slotsType
+     *         a supported {@link CarType}
+     *
+     * @return a positive number
+     */
     public long remainingFreeSlots(@NonNull CarType slotsType) {
         return this.parkingSlots.stream().filter(isFree(slotsType)).count();
     }
