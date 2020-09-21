@@ -96,6 +96,11 @@ BigDecimal bill = parking.bill(car); // create the bill using the parking pricin
 ### Class error
 If you face that kind of error : ``class file has wrong version 55.0 should be 52.0``, please make sure you are using JDK 11.
 
+# Quality
+Build is passing [![Build Status](https://travis-ci.org/IamPitchou/parking-api.svg?branch=master)](https://travis-ci.org/IamPitchou/parking-api)
+Code is compliant is Sonar Rules.
+Code coverage is above 90%. 
+
 # Future
 ## API evolves into WEB API
 To enhance the project, create a RESTFul API could be interesting with SpringBoot and a database to store the system state.
